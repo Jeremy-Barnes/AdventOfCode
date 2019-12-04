@@ -163,7 +163,7 @@ namespace PuzzleSolutions.Year2019
 
         /// <summary>
         /// I kind of like the compactness and readability of this one.
-        /// It also keeps the original number values in tact, unlike the next implementation.
+        /// It also keeps the original number values intact, unlike the next implementation.
         /// Its about 2x slower as the original, less compact implementation.
         /// </summary>
         private List<int> evaluateRangeWithGroupingsCondensed(int rangeStart, int rangeEnd, int maxGroupSize = 2)
