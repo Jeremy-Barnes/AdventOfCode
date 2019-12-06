@@ -17,10 +17,25 @@ namespace PuzzleSolutions
             int puzzleYear = getPuzzleYear();
             string solutionIdString = $"Dec{puzzleDay.ToString().PadLeft(2, '0')}";
 
-            Solution solution = (Solution)Activator.CreateInstance(Type.GetType($"PuzzleSolutions.Year{puzzleYear}.{solutionIdString}"));
-            var inputLines = getInput(puzzleYear, solutionIdString);
-            // ACTUAL OPERATIONAL LOGIC THAT ISN'T JUST CUTE CONSOLE FUN TO AMUSE MYSELF
-            solution.Go(inputLines);
+            try
+            {
+                // ACTUAL OPERATIONAL LOGIC THAT ISN'T JUST CUTE CONSOLE FUN TO AMUSE MYSELF
+                Solution solution = (Solution)Activator.CreateInstance(Type.GetType($"PuzzleSolutions.Year{puzzleYear}.{solutionIdString}"));
+                var inputLines = getInput(puzzleYear, solutionIdString);
+                solution.Go(inputLines);
+                // BACK TO CONSOLE FUN :)
+            }
+            catch (Exception ex)
+            {
+                if (Type.GetType($"PuzzleSolutions.Year{puzzleYear}.{solutionIdString}") == null)
+                {
+                    Console.WriteLine($"Oh no, I haven't implemented PuzzleSolutions.Year{puzzleYear}.{solutionIdString} yet!");
+                } else
+                {
+                    Console.WriteLine("You got some bad input or something, chump - " + ex.ToString());
+                }
+
+            }
             // BACK TO CONSOLE FUN :)
 
             Console.WriteLine("Done! Hit Enter to close window.");
