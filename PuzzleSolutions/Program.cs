@@ -11,20 +11,23 @@ namespace PuzzleSolutions
         {
             Console.SetWindowPosition(0, 0);
             Console.SetWindowSize(Console.LargestWindowWidth - (int)(Console.LargestWindowWidth * .20), Console.LargestWindowHeight - (int)(Console.LargestWindowHeight * .20));
+            string userIn = "";
+            while (userIn.ToUpper() != "EXIT")
+            {
+                printTree();
+                int puzzleDay = getPuzzleDay();
+                int puzzleYear = getPuzzleYear();
+                string solutionIdString = $"Dec{puzzleDay.ToString().PadLeft(2, '0')}";
 
-            printTree();
-            int puzzleDay = getPuzzleDay();
-            int puzzleYear = getPuzzleYear();
-            string solutionIdString = $"Dec{puzzleDay.ToString().PadLeft(2, '0')}";
+                Solution solution = (Solution)Activator.CreateInstance(Type.GetType($"PuzzleSolutions.Year{puzzleYear}.{solutionIdString}"));
+                var inputLines = getInput(puzzleYear, solutionIdString);
+                // ACTUAL OPERATIONAL LOGIC THAT ISN'T JUST CUTE CONSOLE FUN TO AMUSE MYSELF
+                solution.Go(inputLines);
+                // BACK TO CONSOLE FUN :)
 
-            Solution solution = (Solution)Activator.CreateInstance(Type.GetType($"PuzzleSolutions.Year{puzzleYear}.{solutionIdString}"));
-            var inputLines = getInput(puzzleYear, solutionIdString);
-            // ACTUAL OPERATIONAL LOGIC THAT ISN'T JUST CUTE CONSOLE FUN TO AMUSE MYSELF
-            solution.Go(inputLines);
-            // BACK TO CONSOLE FUN :)
-
-            Console.WriteLine("Done! Hit Enter to close window.");
-            Console.ReadLine();
+                Console.WriteLine("Done! Hit Enter to run again, type exit to quit.");
+                userIn = Console.ReadLine();
+            }
         }
 
         static string[] getInput(int puzzleYear, string solutionIdString)
