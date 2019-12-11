@@ -15,6 +15,7 @@ namespace PuzzleSolutions.Year2019.Utils
         jumpFalse = 6,
         lessThan = 7,
         equals = 8,
+        adjustRelativeBase = 9,
         exit = 99
     }
 
@@ -22,6 +23,7 @@ namespace PuzzleSolutions.Year2019.Utils
     {
         List<int> input;
         int index = 0;
+        long relativeBase = 0;
 
         public IntcodeComputer(List<int> input)
         {
@@ -38,7 +40,7 @@ namespace PuzzleSolutions.Year2019.Utils
             this.input.Add(input);
         }
 
-        public int SetUpAndRunIntCode(string inputLine)
+        public long SetUpAndRunIntCode(string inputLine)
         {
             try
             {
@@ -51,25 +53,25 @@ namespace PuzzleSolutions.Year2019.Utils
             throw new Exception("How did you even get here!");
         }
 
-        public int ExecuteIntCodeOperationToCompletion(List<string> opCodes)
+        public long ExecuteIntCodeOperationToCompletion(List<string> opCodes)
         {
-            int output = 0;
+            long output = 0;
             do
             {
                 var operatorCode = new Instruction(opCodes[index], opCodes, index);
-                output = operatorCode.operate(opCodes, () => { int result = input[0]; input.RemoveAt(0); return result; }, ref index) ?? output;
+                output = operatorCode.operate(opCodes, () => { int result = input[0]; input.RemoveAt(0); return result; }, ref index, ref relativeBase) ?? output;
             } while (index < opCodes.Count);
 
             return output;
         }
 
-        public int? ExecuteIntCodeOperationToHalting(List<string> opCodes)
+        public long? ExecuteIntCodeOperationToHalting(List<string> opCodes)
         {
-            int? output = null;
+            long? output = null;
             do
             {
                 var operatorCode = new Instruction(opCodes[index], opCodes, index);
-                output = operatorCode.operate(opCodes, () => { int result = input[0]; input.RemoveAt(0); return result; }, ref index);
+                output = operatorCode.operate(opCodes, () => { int result = input[0]; input.RemoveAt(0); return result; }, ref index, ref relativeBase);
             } while (output == null);
 
             return output;
@@ -90,94 +92,96 @@ namespace PuzzleSolutions.Year2019.Utils
     public class Instruction
     {
         public OpCode opCode;
-        public List<bool> positionModePerOperand = new List<bool>();
-        public List<int> operands = new List<int>();
+        public List<int> modePerOperand = new List<int>();
+        public List<long> operands = new List<long>();
 
         public Instruction(string opCodeValue, List<string> intCodes, int instructionIndex)
         {
-            var opCodeStr = string.Concat((opCodeValue.Length > 1 ? opCodeValue[opCodeValue.Length - 2] : '0' ), opCodeValue[opCodeValue.Length - 1]);
-            opCode = (OpCode)Int32.Parse(opCodeStr);
+            var opCodeStr = string.Concat((opCodeValue.Length > 1 ? opCodeValue[opCodeValue.Length - 2] : '0'), opCodeValue[opCodeValue.Length - 1]);
+            opCode = (OpCode)Int64.Parse(opCodeStr);
 
             if (opCode == (OpCode)99) return;
 
             string operandModeIndicators = opCodeValue.Length > 1 ? opCodeValue.Substring(0, opCodeValue.Length - 2) : "000";
             foreach (char integer in operandModeIndicators.Reverse())
             {
-                if (integer == '0')
-                {
-                    positionModePerOperand.Add(true);
-                }
-                else
-                {
-                    positionModePerOperand.Add(false);
-                }
+                modePerOperand.Add((int)char.GetNumericValue(integer));
             }
-            foreach (int i in Enumerable.Range(0, 3 - operandModeIndicators.Length)) //
-                positionModePerOperand.Add(true);
+            foreach (int i in Enumerable.Range(0, 3 - operandModeIndicators.Length)) //fill in case its implicit
+                modePerOperand.Add(0);
 
-            operands.Add(Int32.Parse(intCodes[instructionIndex + 1]));
+            operands.Add(Int64.Parse(intCodes[instructionIndex + 1]));
 
-            if (opCode == (OpCode)3 || opCode == (OpCode)4) return;
+            if (opCode == (OpCode)3 || opCode == (OpCode)4 || opCode == (OpCode)9) return;
 
-            operands.Add(Int32.Parse(intCodes[instructionIndex + 2]));
+            operands.Add(Int64.Parse(intCodes[instructionIndex + 2]));
 
             if (opCode == (OpCode)5 || opCode == (OpCode)6) return;
 
-            operands.Add(Int32.Parse(intCodes[instructionIndex + 3]));
+            operands.Add(Int64.Parse(intCodes[instructionIndex + 3]));
         }
 
-        public int? operate(List<string> codes, Func<int> input, ref int instructionPointer)
+        public long? operate(List<string> codes, Func<int> input, ref int instructionPointer, ref long relativeBase)
         {
-            int? output = null;
+            long? output = null;
             if (opCode == OpCode.add)
             {
-                codes[operands[2]] = (getOperandValue(operands[0], positionModePerOperand[0], codes) + getOperandValue(operands[1], positionModePerOperand[1], codes)).ToString();
+                var saveIndex = (int)getSaveValue((int)operands[2], modePerOperand[2], codes, relativeBase);
+                var op1 = getOperandValue(operands[0], modePerOperand[0], codes, relativeBase);
+                var op2 = getOperandValue(operands[1], modePerOperand[1], codes, relativeBase);
+                codes[saveIndex] = (op1+op2).ToString();
             }
             if (opCode == OpCode.multiply)
             {
-                codes[operands[2]] = (getOperandValue(operands[0], positionModePerOperand[0], codes) * getOperandValue(operands[1], positionModePerOperand[1], codes)).ToString();
+
+                codes[(int)getSaveValue((int)operands[2], modePerOperand[2], codes, relativeBase)] = (getOperandValue(operands[0], modePerOperand[0], codes, relativeBase) * getOperandValue(operands[1], modePerOperand[1], codes, relativeBase)).ToString();
 
             }
             if (opCode == OpCode.save)
             {
-                codes[operands[0]] = input.Invoke().ToString();
+                codes[(int)getSaveValue((int)operands[0], modePerOperand[0], codes, relativeBase)] = input.Invoke().ToString();
             }
             if (opCode == OpCode.output)
             {
-                codes[0] = getOperandValue(operands[0], positionModePerOperand[0], codes).ToString();
-                output = Int32.Parse(codes[0]);
+                //codes[0] = getOperandValue(operands[0], modePerOperand[0], codes, relativeBase).ToString();
+                output = getOperandValue(operands[0], modePerOperand[0], codes, relativeBase);
+               // Console.WriteLine(output);
             }
             if (opCode == OpCode.jumpTrue)
             {
-                if (getOperandValue(operands[0], positionModePerOperand[0], codes) != 0)
+                if (getOperandValue(operands[0], modePerOperand[0], codes, relativeBase) != 0)
                 {
-                    instructionPointer = getOperandValue(operands[1], positionModePerOperand[1], codes);
+                    instructionPointer = (int)getOperandValue(operands[1], modePerOperand[1], codes, relativeBase);
                     return output;
                 }
 
             }
             if (opCode == OpCode.jumpFalse)
             {
-                if (getOperandValue(operands[0], positionModePerOperand[0], codes) == 0)
+                if (getOperandValue(operands[0], modePerOperand[0], codes, relativeBase) == 0)
                 {
-                    instructionPointer = getOperandValue(operands[1], positionModePerOperand[1], codes);
+                    instructionPointer = (int)getOperandValue(operands[1], modePerOperand[1], codes, relativeBase);
                     return output;
                 }
             }
             if (opCode == OpCode.lessThan)
             {
-                if (getOperandValue(operands[0], positionModePerOperand[0], codes) < getOperandValue(operands[1], positionModePerOperand[1], codes))
+                if (getOperandValue(operands[0], modePerOperand[0], codes, relativeBase) < getOperandValue(operands[1], modePerOperand[1], codes, relativeBase))
                 {
-                    codes[operands[2]] = "1";
+                    codes[(int)getSaveValue((int)operands[2], modePerOperand[2], codes, relativeBase)] = "1";
                 }
                 else
                 {
-                    codes[operands[2]] = "0";
+                    codes[(int)getSaveValue((int)operands[2], modePerOperand[2], codes, relativeBase)] = "0";
                 }
             }
             if (opCode == OpCode.equals)
             {
-                codes[operands[2]] = getOperandValue(operands[0], positionModePerOperand[0], codes) == getOperandValue(operands[1], positionModePerOperand[1], codes) ? "1" : "0";
+                codes[(int)getSaveValue((int)operands[2], modePerOperand[2], codes, relativeBase)] = getOperandValue(operands[0], modePerOperand[0], codes, relativeBase) == getOperandValue(operands[1], modePerOperand[1], codes, relativeBase) ? "1" : "0";
+            }
+              if(opCode == OpCode.adjustRelativeBase)
+            {
+                relativeBase += getOperandValue(operands[0], modePerOperand[0], codes, relativeBase);
             }
             if (opCode == OpCode.exit)
             {
@@ -188,16 +192,34 @@ namespace PuzzleSolutions.Year2019.Utils
             return output;
         }
 
-        private int getOperandValue(int operand, bool positionModeNotImmediateMode, List<string> codes)
+        private long getOperandValue(long operand, int parameterMode, List<string> codes, long relativeBase)
         {
-            if (positionModeNotImmediateMode)
+            if (parameterMode == 0)
             {
-                return Int32.Parse(codes[operand]);
+                var code = codes.ElementAtOrDefault((int)operand) ?? "0";
+                return Int64.Parse(code);
             }
-            else
+            if (parameterMode == 1)
             {
                 return operand;
             }
+            if (parameterMode == 2)
+            {
+                var code = codes.ElementAtOrDefault((int)(relativeBase + operand)) ?? "0";
+                return Int64.Parse(code);
+            }
+            throw new Exception("Bad parameter given");
+        }
+
+        private long getSaveValue(long operand, int parameterMode, List<string> codes, long relativeBase)
+        {
+            if (parameterMode == 2)
+            {
+                return (relativeBase + operand);
+            }
+            return operand;
+
+            //throw new Exception("Bad parameter given");
         }
     }
 }

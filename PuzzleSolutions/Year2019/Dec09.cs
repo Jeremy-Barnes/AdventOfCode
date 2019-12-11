@@ -7,9 +7,10 @@ using System.Text;
 
 namespace PuzzleSolutions.Year2019
 {
-    public class Dec05 : Solution
+    public class Dec09 : Solution
     {
-        IntcodeComputer compy = new IntcodeComputer(5);
+        IntcodeComputer compy = new IntcodeComputer(2);
+
 
         public void Go(string[] fileLines)
         {
@@ -24,7 +25,13 @@ namespace PuzzleSolutions.Year2019
 
         private List<string> parse(string line)
         {
-            return line.Split(',').ToList();
+            
+            var codes = line.Split(',').ToList();
+            for(int i = 0; i < 10000; i++)
+            {
+                codes.Add("0");
+            }
+            return codes;
         }
     }
 }
