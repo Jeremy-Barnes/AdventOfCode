@@ -29,6 +29,7 @@ namespace PuzzleSolutions
                 }
                 catch (Exception ex)
                 {
+
                     if (Type.GetType($"PuzzleSolutions.Year{puzzleYear}.{solutionIdString}") == null)
                     {
                         Console.WriteLine($"Oh no, I haven't implemented PuzzleSolutions.Year{puzzleYear}.{solutionIdString} yet!");
@@ -154,7 +155,7 @@ namespace PuzzleSolutions
         /// <returns></returns>
         static int getPuzzleYear()
         {
-            return 2019;//in 2020 I'm FUCKED
+            return DateTime.Now.Year;
         }
     }
 
