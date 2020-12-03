@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace PuzzleSolutions.Year2020
@@ -19,8 +20,11 @@ namespace PuzzleSolutions.Year2020
             }
             Console.WriteLine($"All Multiplied: {multiplied}");
 
-            var stackDay2 = IndeterminateLoopNester(fileLines, 2);
+            Stopwatch stop = Stopwatch.StartNew();
 
+            var stackDay2 = IndeterminateLoopNester(fileLines, 2);
+            stop.Stop();
+            Console.WriteLine($"Took {stop.ElapsedMilliseconds}ms");
             multiplied = 1;
             foreach (var kvp in stackDay2)
             {
@@ -41,6 +45,8 @@ namespace PuzzleSolutions.Year2020
             {
                 int rightOperand = int.Parse(fileLines[rightOperandIndex]);
 
+                if (leftOperand > 2020) return null;
+
                 if (requiredDepth == currentDepth && leftOperand + rightOperand == 2020)
                 {
                     return new List<(int, int)>() { (rightOperandIndex, rightOperand) };
@@ -51,7 +57,6 @@ namespace PuzzleSolutions.Year2020
                     var subStack = FindSum(leftOperand + rightOperand, rightOperandIndex, fileLines, requiredDepth, currentDepth + 1);
                     if (subStack != null)
                     {
-
                         return stack.Concat(subStack).ToList();
                     }
                 } //else keep looping

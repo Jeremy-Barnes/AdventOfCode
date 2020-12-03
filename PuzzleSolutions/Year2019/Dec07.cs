@@ -52,7 +52,7 @@ namespace PuzzleSolutions.Year2019
                int output = 0;
                 foreach (int phase in phaseSequence)
                 {
-                    output = new IntcodeComputer(new List<int> { phase, output }).SetUpAndRunIntCode(fileLines[0]);
+                    output = (int)new IntcodeComputer(new List<int> { phase, output }).SetUpAndRunIntCode(fileLines[0]);
                     if (maxOut < output) maxOut = output;
                 }
             }
@@ -86,7 +86,7 @@ namespace PuzzleSolutions.Year2019
 
             public int Amplify()
             {
-                return intputer.ExecuteIntCodeOperationToHalting(opCodes).Value;
+                return (int)intputer.ExecuteIntCodeOperationToHalting(opCodes).Value;
             }
 
             public void AddInput(int input)
